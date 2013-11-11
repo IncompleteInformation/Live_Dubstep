@@ -88,7 +88,7 @@ void RGBwrite(uint8_t LED, uint8_t R, uint8_t G, uint8_t B)
 //  uint8_t R = RED; //create temps so globals are not destroyed
 //  uint8_t G = GREEN;
 //  uint8_t B = BLUE;
-  if (RADIUS<LED){
+  if (RADIUS<=LED){
     R=0;
     G=0;
     B=0;
@@ -168,12 +168,12 @@ void RGBwrite(uint8_t LED, uint8_t R, uint8_t G, uint8_t B)
       }else{
         led_state &= ~0b00001000;
       }
-      PORTB &= ~00111000;
+      PORTB &= ~0b00111000;
       PORTB |= led_state;
       cycles += 1;
     }
     //if (LED%3==2){
-      PORTB &= 0b11000111;  //turn off led to make "room" for current to other LEDs
+      PORTB &= ~0b00111000;  //turn off led to make "room" for current to other LEDs
     //}
   }
 
@@ -189,6 +189,7 @@ void RGBwrite(uint8_t LED, uint8_t R, uint8_t G, uint8_t B)
         R -= 1; 
       }else{
         led_state &= ~0b00000100;
+      }
       //handle G
       if (G > 0){
         led_state |= 0b00000010;
@@ -220,6 +221,6 @@ void RGBwrite(uint8_t LED, uint8_t R, uint8_t G, uint8_t B)
       PORTC |= (1<<(6-cathode)); //hopefully turns the 1 to 6 indexing into 5 to zero bitshift
     }
   //}
-  }
+//  }
   
 }
