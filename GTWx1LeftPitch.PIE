@@ -1,0 +1,292 @@
+﻿/*
+Joe Brown's GameTrak and Two Hand Wiimote Midi controller. Feel free to copy, edit and distribute.
+*/
+//The shift var controls the instrument that you will be using. instrument is wiimote 1, shift2 is wiimote2
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+//////        Midi Setup      //////
+midi.DefaultChannel = 1;
+midi.DeviceOut=2;
+var.kill_qnote=True
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+if (Wiimote1.Up) then begin{
+  var.instrument = 0;
+  wiimote1.Led1 = False;
+  wiimote1.Led2 = False;
+  wiimote1.Led3 = False;
+  wiimote1.Led4 = True;
+  midi.cc31=True;
+}
+if (Wiimote1.Right) then begin{
+  var.instrument = 1;
+  wiimote1.Led1 = False;
+  wiimote1.Led2 = False;
+  wiimote1.Led3 = True;
+  wiimote1.Led4 = False;
+  midi.cc32=True;
+}
+if (Wiimote1.Down) then begin{
+  var.instrument = 2;
+  wiimote1.Led1 = False;
+  wiimote1.Led2 = True;
+  wiimote1.Led3 = False;
+  wiimote1.Led4 = False;
+  midi.cc33=True;
+}
+if (Wiimote1.Left) then begin{
+  var.instrument = 3;
+  wiimote1.Led1 = True;
+  wiimote1.Led2 = False;
+  wiimote1.Led3 = False;
+  wiimote1.Led4 = False;
+  midi.cc34=True;
+}
+
+////// Right and Left GameTrak Channels
+//var.x1 = joystick.x;
+//var.y1 = joystick.y/2;
+var.z1 = 1-((1+joystick.z)/2);
+
+var.x2 = joystick.pitch;
+var.y2 = 1+joystick.yaw;
+var.z2 = 1-((1+joystick.roll)/2);
+
+
+if (joystick.Button1) then begin {
+  var.pedal = 1;
+}end else begin{
+  var.pedal = 0;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+//////     Wiimote 1 (Right)    //////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+var.YAWaccel1=(Smooth(wiimote1.MotionPlus.YawSpeed ,10))/1500
+
+////////////////////////////////////////////////////////////////////////////////
+//////     Instrument and Modifier (Wiimote1)
+//////
+//1 = envelope  (W1Yaw)
+//2 = pitch     (z1)
+//3 = volume    (z2)
+//6 = drive     (x2 and y2 [0x + -1y = 0, 1x + 0y = 1])
+//
+//11 = inst0    (var.instrument = 0)
+//12 = inst1    (var.instrument = 1)
+//13 = inst2    (var.instrument = 2)
+//14 = inst3    (var.instrument = 3)
+//
+/////////////////////////////////////////////////////////////////////////////
+//Calculate Volume and Drive
+/////////////////////////////////////////////////////////////////////////////
+var.drive = sqrt(var.x2**2+var.y2**2)/sqrt(2)
+
+var.rmin0=.12
+var.rmin1=.05
+var.rmax0=.22
+var.rmax1=.16
+
+//var.drive=theta
+if (var.x2<0 and var.y2>0) then begin{
+  var.y2=0
+  var.drive=0
+}
+if (var.drive>1) then begin{
+  var.drive=1
+}
+
+if (var.x2<0) then begin{
+  var.x2=0
+}
+if (var.y2>1) then begin{
+  var.y2=1
+}
+if (var.x2<1 and var.y2==1) then begin{
+  var.x2=1
+}
+
+var.ReffMin = var.rmin0*(1-var.drive)+var.rmin1*(var.drive)
+var.ReffMax = var.rmax0*(1-var.drive)+var.rmax1*(var.drive)
+
+if (var.z2<var.ReffMin) then begin{
+  var.volume=0
+}elseif (var.z2>var.ReffMax) then begin{
+  var.volume=1
+}end else begin{
+  var.volume=(var.z2-var.ReffMin)/(var.ReffMax-var.ReffMin)
+}
+midi.cc3=var.volume
+midi.cc6=var.drive
+//////////////////////////////////////////////////////////////////////////
+//Choose Instrument Stage
+/////////////////////////////////////////////////////////////////////////////
+if (var.instrument == 0) then begin{
+  var.toggle11=1
+}end else begin{
+  var.toggle11=0
+}
+if (var.toggle11) then begin{
+  if (not var.tap11) then begin{
+    var.tap11=1
+    midi.cc11=1
+  }
+}end else begin{
+  if (var.tap11) then begin{
+    midi.cc11=1
+    var.tap11=0
+  }
+}
+
+if (var.instrument == 1) then begin{
+  var.toggle12=1
+}end else begin{
+  var.toggle12=0
+}
+if (var.toggle12) then begin{
+  if (not var.tap12) then begin{
+    var.tap12=1
+    midi.cc12=1
+  }
+}end else begin{
+  if (var.tap12) then begin{
+    midi.cc12=1
+    var.tap12=0
+  }
+}
+
+if (var.instrument == 2) then begin{
+  var.toggle13=1
+}end else begin{
+  var.toggle13=0
+}
+if (var.toggle13) then begin{
+  if (not var.tap13) then begin{
+    var.tap13=1
+    midi.cc13=1
+  }
+}end else begin{
+  if (var.tap13) then begin{
+    midi.cc13=1
+    var.tap13=0
+  }
+}
+
+if (var.instrument == 3) then begin{
+  var.toggle14=1
+}end else begin{
+  var.toggle14=0
+}
+if (var.toggle14) then begin{
+  if (not var.tap14) then begin{
+    var.tap14=1
+    midi.cc14=1
+  }
+}end else begin{
+  if (var.tap14) then begin{
+    midi.cc14=1
+    var.tap14=0
+  }
+}
+
+////////////////////////////////////////////////////////////////////
+//Handle Right Input Stage
+////////////////////////////////////////////////////////////////////
+
+if (not wiimote1.One) then begin{
+/////////////Handle WM1A//////////////////////  
+  if (wiimote1.Two) then begin{
+    //midi.cc1=1
+    //var.midicc1=1
+    midi.cc1 = abs(var.YAWaccel1);
+
+  }end else begin{
+    if (var.YAWaccel1>-1.5 AND var.YAWaccel1<-.1) then begin{
+
+      if (var.temp1>=var.YAWaccel1) then begin{
+        var.temp1 = var.YAWaccel1;
+        midi.cc1 = -1*(var.YAWaccel1);
+      }
+
+    }
+    if (var.YAWaccel1<1.5 AND var.YAWaccel1>.1) then begin{
+
+      if (var.temp1<=var.YAWaccel1) then begin{
+        var.temp1 = var.YAWaccel1;
+        midi.cc1 = var.YAWaccel1;
+      }
+
+    }
+    /*if (wiimote1.Plus or wiimote.Minus) then begin{
+      midi.cc1 = 1
+    }*/
+  }
+/////////////End Handle WM1A//////////////////////
+  if (var.pedal) then begin{
+    midi.cc2 = var.z1; //set Pitch to z1 
+    var.handle_qnote=True
+    var.kill_qnote=True
+    if (not var.1bc4) then begin{
+      midi.c4 = True;
+      var.1bc4 = True;
+    }
+  }end else begin{
+    if (var.1bc4) then begin{
+      midi.c4=False
+      var.1bc4=False
+    }
+    if (midi.cc2!=0) then begin{
+      midi.cc2=0
+    }
+    var.handle_qnote=True
+    var.kill_qnote=False
+  }
+}end else begin{
+  midi.c4 = False;
+  //midi.cc1=0;
+  var.1bc4 = False;
+  var.handle_qnote=True;
+  var.kill_qnote=True;
+}
+
+if (var.handle_qnote) then begin{
+  ////////////////////////////////////////////////////////////////////
+  //Define Quantized Notes on Wimmote2.B
+  ////////////////////////////////////////////////////////////////////
+
+  midi.DeviceOut=3
+  if (var.kill_qnote) then begin{
+    midi.c1=True
+  }end else begin{
+    var.toPython=var.z1*16383
+    var.toPythonMostSig7=int(var.toPython shr 7)
+    var.toPythonLeastSig7=int(var.toPython & 127)
+    midi.cc1 = (var.toPythonMostSig7/127)
+    midi.DataEntryFine = (var.toPythonLeastSig7/127)
+  }
+  midi.DeviceOut=2
+}
+////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
+////// Global Params
+////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
+
+PIE.FrameRate = 120hz;
+if (wiimote.HasMotionPlus = false) then begin{
+   debug = "WiiMotion Plus NOT DETECTED!";
+}
+/////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
