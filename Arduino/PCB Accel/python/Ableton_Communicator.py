@@ -86,6 +86,7 @@ class Ableton_Communicator:
 		else:
 			self.weighted_toggle = 3
 			self.quantize = True
+			print self.sanitize_note(grabbed_note_data[-1][0][0][2])
 			return self.sanitize_note(grabbed_note_data[-1][0][0][2])
 
 		### play notes
@@ -107,25 +108,27 @@ class Ableton_Communicator:
 		#print "roll:" ,roll
 		#print "yaw :" ,yaw
 		#print self.right_in
-		#print "note on? " ,self.right_in.note_on
-		#print "quantize? ",self.quantize
-		#print "curnote: ",self.curnote
+		print "note on? " ,self.right_in.note_on
+		print "quantize? ",self.quantize
+		print "curnote: ",self.curnote
 		if self.right_in.note_on:
 			# print self.curnote
 			if data_out_curnote==self.curnote:
 				pass
 			else:
 				if self.quantize:
+					print "in quantize"
 					self.midi_out.write([[[0xb0,2,self.pitch_bend_override],0]])
 					self.midi_out.write([[[0x80, self.curnote,127],0]])
 					self.midi_out.write([[[0x90, data_out_curnote,127],0]])
+					self.curnote=data_out_curnote
 					#FAN
 					fan_note = data_out_curnote - 36
 					fan_note = int(fan_note/1.71428)
 					self.POVfan.height_write(fan_note*3)
 					#print "fan_rad" ,bin(fan_note)
 					#/FAN
-					self.curnote=data_out_curnote
+					
 				else:
 					self.midi_out.write([[[0x80, self.curnote,0],0]])
 					self.midi_out.write([[[0x90, data_out_curnote,127],0]])
