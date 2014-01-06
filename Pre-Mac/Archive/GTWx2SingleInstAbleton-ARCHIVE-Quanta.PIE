@@ -1,0 +1,882 @@
+/*
+Joe Brown's GameTrak and Two Hand Wiimote Midi controller. Feel free to copy, edit and distribute.
+*/
+//The shift var controls the instrument that you will be using. instrument is wiimote 1, shift2 is wiimote2
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+//////        Midi Setup      //////
+midi.DefaultChannel = 1;
+midi.DeviceOut=2;
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+if (Wiimote1.Down) then begin{
+  var.instrument = 0;
+  wiimote1.Led1 = False;
+  wiimote1.Led2 = False;
+  wiimote1.Led3 = False;
+  wiimote1.Led4 = True;
+}
+if (Wiimote1.Left) then begin{
+  var.instrument = 1;
+  wiimote1.Led1 = False;
+  wiimote1.Led2 = False;
+  wiimote1.Led3 = True;
+  wiimote1.Led4 = False;
+}
+if (Wiimote1.Up) then begin{
+  var.instrument = 2;
+  wiimote1.Led1 = False;
+  wiimote1.Led2 = True;
+  wiimote1.Led3 = False;
+  wiimote1.Led4 = False;
+}
+if (Wiimote1.Right) then begin{
+  var.instrument = 3;
+  wiimote1.Led1 = True;
+  wiimote1.Led2 = False;
+  wiimote1.Led3 = False;
+  wiimote1.Led4 = False;
+}
+if (Wiimote2.Down) then begin{
+  var.shimmer = 0;
+  wiimote2.Led1 = True;
+  wiimote2.Led2 = True;
+  wiimote2.Led3 = True;
+  wiimote2.Led4 = False;
+}
+if (Wiimote2.Left) then begin{
+  var.shimmer = 1;
+  wiimote2.Led1 = True;
+  wiimote2.Led2 = True;
+  wiimote2.Led3 = False;
+  wiimote2.Led4 = True;
+}
+
+////// Right and Left GameTrak Channels
+//var.x1 = joystick.x;
+//var.y1 = joystick.y/2;
+var.z1 = 1-((1+joystick.z)/2);
+
+var.x2 = joystick.pitch;
+var.y2 = 1+joystick.yaw;
+var.z2 = 1-((1+joystick.roll)/2);
+
+/*
+if (joystick.Button1) then begin {
+  var.pedal = 1;
+}end else begin{
+  var.pedal = 0;
+}
+*/
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+//////     Wiimote 1 (Right)    //////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+var.YAWaccel1=(Smooth(wiimote1.MotionPlus.YawSpeed ,10))/1200
+var.YAWaccel2=(Smooth(wiimote2.MotionPlus.YawSpeed ,10))/1200
+
+////////////////////////////////////////////////////////////////////////////////
+//////     Instrument and Modifier (Wiimote1 and Wiimote2)
+//////
+//1 = envelope  (W1Yaw)
+//2 = pitch     (z1)
+//3 = volume    (z2)
+//4 = panning   (W2YawShim0)
+//5 = other     (W2YawShim1)
+//6 = drive     (x2 and y2 [0x + -1y = 0, 1x + 0y = 1])
+//
+//11 = inst0    (var.instrument = 0)
+//12 = inst1    (var.instrument = 1)
+//13 = inst2    (var.instrument = 2)
+//14 = inst3    (var.instrument = 3)
+//
+//21 = reverb?   (var.shimmer = 0)
+//22 = panning?  (var.shimmer = 1)
+//
+//
+//
+/////////////////////////////////////////////////////////////////////////////
+//Calculate Volume and Drive
+/////////////////////////////////////////////////////////////////////////////
+var.drive = sqrt(var.x2**2+var.y2**2)/sqrt(2)
+
+var.rmin0=.12
+var.rmin1=.05
+var.rmax0=.22
+var.rmax1=.16
+
+//var.drive=theta
+if (var.x2<0 and var.y2>0) then begin{
+  var.y2=0
+  var.drive=0
+}
+if (var.drive>1) then begin{
+  var.drive=1
+}
+
+if (var.x2<0) then begin{
+  var.x2=0
+}
+if (var.y2>1) then begin{
+  var.y2=1
+}
+if (var.x2<1 and var.y2==1) then begin{
+  var.x2=1
+}
+
+var.ReffMin = var.rmin0*(1-var.drive)+var.rmin1*(var.drive)
+var.ReffMax = var.rmax0*(1-var.drive)+var.rmax1*(var.drive)
+
+if (var.z2<var.ReffMin) then begin{
+  var.volume=0
+}elseif (var.z2>var.ReffMax) then begin{
+  var.volume=1
+}end else begin{
+  var.volume=(var.z2-var.ReffMin)/(var.ReffMax-var.ReffMin)
+}
+midi.cc3=var.volume
+midi.cc6=var.drive
+//////////////////////////////////////////////////////////////////////////
+//Choose Instrument Stage
+/////////////////////////////////////////////////////////////////////////////
+if (var.instrument == 0) then begin{
+  var.toggle11=1
+}end else begin{
+  var.toggle11=0
+}
+if (var.toggle11) then begin{
+  if (not var.tap11) then begin{
+    var.tap11=1
+    midi.cc11=1
+  }
+}end else begin{
+  if (var.tap11) then begin{
+    midi.cc11=1
+    var.tap11=0
+  }
+}
+
+if (var.instrument == 1) then begin{
+  var.toggle12=1
+}end else begin{
+  var.toggle12=0
+}
+if (var.toggle12) then begin{
+  if (not var.tap12) then begin{
+    var.tap12=1
+    midi.cc12=1
+  }
+}end else begin{
+  if (var.tap12) then begin{
+    midi.cc12=1
+    var.tap12=0
+  }
+}
+
+if (var.instrument == 2) then begin{
+  var.toggle13=1
+}end else begin{
+  var.toggle13=0
+}
+if (var.toggle13) then begin{
+  if (not var.tap13) then begin{
+    var.tap13=1
+    midi.cc13=1
+  }
+}end else begin{
+  if (var.tap13) then begin{
+    midi.cc13=1
+    var.tap13=0
+  }
+}
+
+if (var.instrument == 3) then begin{
+  var.toggle14=1
+}end else begin{
+  var.toggle14=0
+}
+if (var.toggle14) then begin{
+  if (not var.tap14) then begin{
+    var.tap14=1
+    midi.cc14=1
+  }
+}end else begin{
+  if (var.tap14) then begin{
+    midi.cc14=1
+    var.tap14=0
+  }
+}
+
+//Shimmer
+
+if (var.shimmer == 0) then begin{
+  if (midi.cc21 == 1) then begin{
+  }end else begin{
+    midi.cc21 = 1;
+    midi.cc22 = 0;
+  }
+}
+
+if (var.shimmer == 1) then begin{
+  if (midi.cc22 == 1) then begin{
+  }end else begin{
+    midi.cc21 = 0;
+    midi.cc22 = 1;
+  }
+}
+
+////////////////////////////////////////////////////////////////////
+//Handle Left Input Stage (Wiimote2)
+////////////////////////////////////////////////////////////////////
+
+//reverb?
+
+if (var.shimmer == 0) then begin{  
+  if (wiimote2.Plus OR wiimote2.Minus) then begin{
+    midi.cc4 = abs(var.YAWaccel2);
+
+  }end else begin{
+    if (var.YAWaccel2>-1.5 AND var.YAWaccel2<-.1) then begin{
+
+      if (var.temp2>=var.YAWaccel2) then begin{
+        var.temp2 = var.YAWaccel2;
+        midi.cc4 = -1*(var.YAWaccel2);
+      }
+
+    }
+    if (var.YAWaccel2<1.5 AND var.YAWaccel2>.1) then begin{
+
+      if (var.temp2<=var.YAWaccel2) then begin{
+        var.temp2 = var.YAWaccel2;
+        midi.cc4 = var.YAWaccel2;
+      }
+    }
+  }
+}
+
+//panning? (.5=0 mod)
+
+if (var.shimmer == 1) then begin{  
+  if (wiimote2.Plus OR wiimote2.Minus) then begin{
+    midi.cc5 = abs(var.YAWaccel2);
+
+  }end else begin{
+    if (var.YAWaccel2>-1.5 AND var.YAWaccel2<-.2) then begin{
+
+      if (var.temp2>=var.YAWaccel2) then begin{
+        var.temp2 = var.YAWaccel2;
+        midi.cc5 = .5 + (var.YAWaccel2)/2;
+      }
+
+    }
+    if (var.YAWaccel2<1.5 AND var.YAWaccel2>.2) then begin{
+
+      if (var.temp2<=var.YAWaccel2) then begin{
+        var.temp2 = var.YAWaccel2;
+        midi.cc5 = .5 + var.YAWaccel2/2;
+      }
+    }
+  }
+}
+
+////////////////////////////////////////////////////////////////////
+//Handle Right Input Stage
+////////////////////////////////////////////////////////////////////
+
+if (wiimote1.B) then begin{
+/////////////Handle WM1A//////////////////////  
+  if (wiimote1.A) then begin{
+    midi.cc1 = abs(var.YAWaccel1);
+
+  }end else begin{
+    if (var.YAWaccel1>-1.5 AND var.YAWaccel1<-.1) then begin{
+
+      if (var.temp1>=var.YAWaccel1) then begin{
+        var.temp1 = var.YAWaccel1;
+        midi.cc1 = -1*(var.YAWaccel1);
+      }
+
+    }
+    if (var.YAWaccel1<1.5 AND var.YAWaccel1>.1) then begin{
+
+      if (var.temp1<=var.YAWaccel1) then begin{
+        var.temp1 = var.YAWaccel1;
+        midi.cc1 = var.YAWaccel1;
+      }
+
+    }
+    if (wiimote1.Plus or wiimote.Minus) then begin{
+      midi.cc1 = 1
+    }
+  }
+/////////////End Handle WM1A//////////////////////
+  if (not wiimote2.B) then begin{
+    midi.cc2 = var.z1; //set Pitch to z1 
+    var.handle_qnote=True
+    var.allow_qnote=False
+    if (not var.1bc4) then begin{
+      midi.c4 = True;
+      var.1bc4 = True;
+    }
+  }end else begin{
+    if (not wiimote2.A) then begin{
+      if (var.1bc4) then begin{
+        midi.c4=False
+        var.1bc4=False
+      }
+      if (midi.cc2!=0) then begin{
+        midi.cc2=0
+      }
+      var.handle_qnote=True
+      var.allow_qnote=True
+    }end else begin{
+      if (var.1bc4) then begin{
+        midi.c4=False
+        var.1bc4=False
+      }
+      if (midi.cc2!=0) then begin{
+        midi.cc2=0
+      }
+      var.handle_qnote=False      
+    }
+  }
+}end else begin{
+  midi.c4 = False;
+  var.1bc4 = False;
+  var.handle_qnote=True
+  var.allow_qnote=False
+}
+
+if (var.handle_qnote) then begin{
+  ////////////////////////////////////////////////////////////////////
+  //Define Quantized Notes on Wimmote2.B
+  ////////////////////////////////////////////////////////////////////
+  var.totalPitches =  36  //Massive programmed to go 36 pitches from 0 to 1
+  var.minReach     = .33
+  var.maxReach     = .78
+  var.interval     = 1.0/var.totalPitches
+
+  //Reset All Notes to Off
+  var.c4=False
+  var.csharp4=False
+  var.d4=False
+  var.dsharp4=False
+  var.e4=False
+  var.f4=False
+  var.fsharp4=False
+  var.g4=False
+  var.gsharp4=False
+  var.a4=False
+  var.asharp4=False
+  var.b4=False
+
+  var.c5=False
+  var.csharp5=False
+  var.d5=False
+  var.dsharp5=False
+  var.e5=False
+  var.f5=False
+  var.fsharp5=False
+  var.g5=False
+  var.gsharp5=False
+  var.a5=False
+  var.asharp5=False
+  var.b5=False
+
+  var.c6=False
+  var.csharp6=False
+  var.d6=False
+  var.dsharp6=False
+  var.e6=False
+  var.f6=False
+  var.fsharp6=False
+  var.g6=False
+  var.gsharp6=False
+  var.a6=False
+  var.asharp6=False
+  var.b6=False
+
+  if (var.allow_qnote) then begin{
+    //Octave 1 (c4-b4)
+    if ((0*var.interval)<=var.z1 and var.z1<(1*var.inteval)) then begin{
+      var.c4=True
+    }end else begin{
+      var.c4=False
+    }
+    if ((1*var.interval)<=var.z1 and var.z1<(2*var.inteval)) then begin{
+      var.csharp4=True
+    }end else begin{
+      var.csharp4=False
+    }
+    if ((2*var.interval)<=var.z1 and var.z1<(3*var.inteval)) then begin{
+      var.d4=True
+    }end else begin{
+      var.d4=False
+    }
+    if ((3*var.interval)<=var.z1 and var.z1<(4*var.inteval)) then begin{
+      var.dsharp4=True
+    }end else begin{
+      var.dsharp4=False
+    }
+    if ((4*var.interval)<=var.z1 and var.z1<(5*var.inteval)) then begin{
+      var.e4=True
+    }end else begin{
+      var.e4=False
+    }
+    if ((5*var.interval)<=var.z1 and var.z1<(6*var.inteval)) then begin{
+      var.f4=True
+    }end else begin{
+      var.f4=False
+    }
+    if ((6*var.interval)<=var.z1 and var.z1<(7*var.inteval)) then begin{
+      var.fsharp4=True
+    }end else begin{
+      var.fsharp4=False
+    }
+    if ((7*var.interval)<=var.z1 and var.z1<(8*var.inteval)) then begin{
+      var.g4=True
+    }end else begin{
+      var.g4=False
+    }
+    if ((8*var.interval)<=var.z1 and var.z1<(9*var.inteval)) then begin{
+      var.gsharp4=True
+    }end else begin{
+      var.gsharp4=False
+    }
+    if ((9*var.interval)<=var.z1 and var.z1<(10*var.inteval)) then begin{
+      var.a4=True
+    }end else begin{
+      var.a4=False
+    }
+    if ((10*var.interval)<=var.z1 and var.z1<(11*var.inteval)) then begin{
+      var.asharp4=True
+    }end else begin{
+      var.asharp4=False
+    }
+    if ((11*var.interval)<=var.z1 and var.z1<(12*var.inteval)) then begin{
+      var.b4=True
+    }end else begin{
+      var.b4=False
+    }
+    //Octave 2 (c5-b5)
+    if ((12*var.interval)<=var.z1 and var.z1<(13*var.inteval)) then begin{
+      var.c5=True
+    }end else begin{
+      var.c5=False
+    }
+    if ((13*var.interval)<=var.z1 and var.z1<(14*var.inteval)) then begin{
+      var.csharp5=True
+    }end else begin{
+      var.csharp5=False
+    }
+    if ((14*var.interval)<=var.z1 and var.z1<(15*var.inteval)) then begin{
+      var.d5=True
+    }end else begin{
+      var.d5=False
+    }
+    if ((15*var.interval)<=var.z1 and var.z1<(16*var.inteval)) then begin{
+      var.dsharp5=True
+    }end else begin{
+      var.dsharp5=False
+    }
+    if ((16*var.interval)<=var.z1 and var.z1<(17*var.inteval)) then begin{
+      var.e5=True
+    }end else begin{
+      var.e5=False
+    }
+    if ((17*var.interval)<=var.z1 and var.z1<(18*var.inteval)) then begin{
+      var.f5=True
+    }end else begin{
+      var.f5=False
+    }
+    if ((18*var.interval)<=var.z1 and var.z1<(19*var.inteval)) then begin{
+      var.fsharp5=True
+    }end else begin{
+      var.fsharp5=False
+    }
+    if ((19*var.interval)<=var.z1 and var.z1<(20*var.inteval)) then begin{
+      var.g5=True
+    }end else begin{
+      var.g5=False
+    }
+    if ((20*var.interval)<=var.z1 and var.z1<(21*var.inteval)) then begin{
+      var.gsharp5=True
+    }end else begin{
+      var.gsharp5=False
+    }
+    if ((21*var.interval)<=var.z1 and var.z1<(22*var.inteval)) then begin{
+      var.a5=True
+    }end else begin{
+      var.a5=False
+    }
+    if ((22*var.interval)<=var.z1 and var.z1<(23*var.inteval)) then begin{
+      var.asharp5=True
+    }end else begin{
+      var.asharp5=False
+    }
+    if ((23*var.interval)<=var.z1 and var.z1<(24*var.inteval)) then begin{
+      var.b5=True
+    }end else begin{
+      var.b5=False
+    }
+    //Octave 3 (c6-b6)
+    if ((24*var.interval)<=var.z1 and var.z1<(25*var.inteval)) then begin{
+      var.c6=True
+    }end else begin{
+      var.c6=False
+    }
+    if ((25*var.interval)<=var.z1 and var.z1<(26*var.inteval)) then begin{
+      var.csharp6=True
+    }end else begin{
+      var.csharp6=False
+    }
+    if ((26*var.interval)<=var.z1 and var.z1<(27*var.inteval)) then begin{
+      var.d6=True
+    }end else begin{
+      var.d6=False
+    }
+    if ((27*var.interval)<=var.z1 and var.z1<(28*var.inteval)) then begin{
+      var.dsharp6=True
+    }end else begin{
+      var.dsharp6=False
+    }
+    if ((28*var.interval)<=var.z1 and var.z1<(29*var.inteval)) then begin{
+      var.e6=True
+    }end else begin{
+      var.e6=False
+    }
+    if ((29*var.interval)<=var.z1 and var.z1<(30*var.inteval)) then begin{
+      var.f6=True
+    }end else begin{
+      var.f6=False
+    }
+    if ((30*var.interval)<=var.z1 and var.z1<(31*var.inteval)) then begin{
+      var.fsharp6=True
+    }end else begin{
+      var.fsharp6=False
+    }
+    if ((31*var.interval)<=var.z1 and var.z1<(32*var.inteval)) then begin{
+      var.g6=True
+    }end else begin{
+      var.g6=False
+    }
+    if ((32*var.interval)<=var.z1 and var.z1<(33*var.inteval)) then begin{
+      var.gsharp6=True
+    }end else begin{
+      var.gsharp6=False
+    }
+    if ((33*var.interval)<=var.z1 and var.z1<(34*var.inteval)) then begin{
+      var.a6=True
+    }end else begin{
+      var.a6=False
+    }
+    if ((34*var.interval)<=var.z1 and var.z1<(35*var.inteval)) then begin{
+      var.asharp6=True
+    }end else begin{
+      var.asharp6=False
+    }
+    if ((35*var.interval)<=var.z1 and var.z1<(36*var.inteval)) then begin{
+      var.b6=True
+    }end else begin{
+      var.b6=False
+    }
+  }
+  ////////////////////////////////////////////////////////////////////
+  //Handle Quantized Notes on Wimmote2.B
+  ////////////////////////////////////////////////////////////////////
+  //Octave 1 (c4-b4)
+  if (var.c4) then begin{
+    if (not midi.c4) then begin{
+      midi.c4=True
+    }
+  }end else begin{
+    if (midi.c4 AND (not var.1bc4)) then begin{
+      midi.c4=False
+    }
+  }
+  if (var.csharp4) then begin{
+    if (not midi.csharp4) then begin{
+      midi.csharp4=True
+    }
+  }end else begin{
+    if (midi.csharp4) then begin{
+      midi.csharp4=False      
+    }
+  }
+  if (var.d4) then begin{
+    if (not midi.d4) then begin{
+      midi.d4=True
+    }
+  }end else begin{
+    midi.d4=False
+  }        
+  if (var.dsharp4) then begin{
+    if (not midi.dsharp4) then begin{
+      midi.dsharp4=True
+    }
+  }end else begin{
+    midi.dsharp4=False
+  }
+  if (var.e4) then begin{
+    if (not midi.e4) then begin{
+      midi.e4=True
+    }
+  }end else begin{
+    midi.e4=False
+  } 
+  if (var.f4) then begin{
+    if (not midi.f4) then begin{
+      midi.f4=True
+    }
+  }end else begin{
+    midi.f4=False
+  } 
+  if (var.fsharp4) then begin{
+    if (not midi.fsharp4) then begin{
+      midi.fsharp4=True
+    }
+  }end else begin{
+    midi.fsharp4=False
+  }
+  if (var.g4) then begin{
+    if (not midi.g4) then begin{
+      midi.g4=True
+    }
+  }end else begin{
+    midi.g4=False
+  } 
+  if (var.gsharp4) then begin{
+    if (not midi.gsharp4) then begin{
+      midi.gsharp4=True
+    }
+  }end else begin{
+    midi.gsharp4=False
+  }
+  if (var.a4) then begin{
+    if (not midi.a4) then begin{
+      midi.a4=True
+    }
+  }end else begin{
+    midi.a4=False
+  } 
+  if (var.asharp4) then begin{
+    if (not midi.asharp4) then begin{
+      midi.asharp4=True
+    }
+  }end else begin{
+    midi.asharp4=False
+  }
+  if (var.b4) then begin{
+    if (not midi.b4) then begin{
+      midi.b4=True
+    }
+  }end else begin{
+    midi.b4=False
+  } 
+  //Octave 2 (c5-b5)
+  if (var.c5) then begin{
+    if (not midi.c5) then begin{
+      midi.c5=True
+    }
+  }end else begin{
+    midi.c5=False
+  }
+  if (var.csharp5) then begin{
+    if (not midi.csharp5) then begin{
+      midi.csharp5=True
+    }
+  }end else begin{
+    midi.csharp5=False
+  }
+  if (var.d5) then begin{
+    if (not midi.d5) then begin{
+      midi.d5=True
+    }
+  }end else begin{
+    midi.d5=False
+  }        
+  if (var.dsharp5) then begin{
+    if (not midi.dsharp5) then begin{
+      midi.dsharp5=True
+    }
+  }end else begin{
+    midi.dsharp5=False
+  }
+  if (var.e5) then begin{
+    if (not midi.e5) then begin{
+      midi.e5=True
+    }
+  }end else begin{
+    midi.e5=False
+  } 
+  if (var.f5) then begin{
+    if (not midi.f5) then begin{
+      midi.f5=True
+    }
+  }end else begin{
+    midi.f5=False
+  } 
+  if (var.fsharp5) then begin{
+    if (not midi.fsharp5) then begin{
+      midi.fsharp5=True
+    }
+  }end else begin{
+    midi.fsharp5=False
+  }
+  if (var.g5) then begin{
+    if (not midi.g5) then begin{
+      midi.g5=True
+    }
+  }end else begin{
+    midi.g5=False
+  } 
+  if (var.gsharp5) then begin{
+    if (not midi.gsharp5) then begin{
+      midi.gsharp5=True
+    }
+  }end else begin{
+    midi.gsharp5=False
+  }
+  if (var.a5) then begin{
+    if (not midi.a5) then begin{
+      midi.a5=True
+    }
+  }end else begin{
+    midi.a5=False
+  } 
+  if (var.asharp5) then begin{
+    if (not midi.asharp5) then begin{
+      midi.asharp5=True
+    }
+  }end else begin{
+    midi.asharp5=False
+  }
+  if (var.b5) then begin{
+    if (not midi.b5) then begin{
+      midi.b5=True
+    }
+  }end else begin{
+    midi.b5=False
+  } 
+  //Octave 3 (c6-b6)
+  if (var.c6) then begin{
+    if (not midi.c6) then begin{
+      midi.c6=True
+    }
+  }end else begin{
+    midi.c6=False
+  }
+  if (var.csharp6) then begin{
+    if (not midi.csharp6) then begin{
+      midi.csharp6=True
+    }
+  }end else begin{
+    midi.csharp6=False
+  }
+  if (var.d6) then begin{
+    if (not midi.d6) then begin{
+      midi.d6=True
+    }
+  }end else begin{
+    midi.d6=False
+  }        
+  if (var.dsharp6) then begin{
+    if (not midi.dsharp6) then begin{
+      midi.dsharp6=True
+    }
+  }end else begin{
+    midi.dsharp6=False
+  }
+  if (var.e6) then begin{
+    if (not midi.e6) then begin{
+      midi.e6=True
+    }
+  }end else begin{
+    midi.e6=False
+  } 
+  if (var.f6) then begin{
+    if (not midi.f6) then begin{
+      midi.f6=True
+    }
+  }end else begin{
+    midi.f6=False
+  } 
+  if (var.fsharp6) then begin{
+    if (not midi.fsharp6) then begin{
+      midi.fsharp6=True
+    }
+  }end else begin{
+    midi.fsharp6=False
+  }
+  if (var.g6) then begin{
+    if (not midi.g6) then begin{
+      midi.g6=True
+    }
+  }end else begin{
+    midi.g6=False
+  } 
+  if (var.gsharp6) then begin{
+    if (not midi.gsharp6) then begin{
+      midi.gsharp6=True
+    }
+  }end else begin{
+    midi.gsharp6=False
+  }
+  if (var.a6) then begin{
+    if (not midi.a6) then begin{
+      midi.a6=True
+    }
+  }end else begin{
+    midi.a6=False
+  } 
+  if (var.asharp6) then begin{
+    if (not midi.asharp6) then begin{
+      midi.asharp6=True
+    }
+  }end else begin{
+    midi.asharp6=False
+  }
+  if (var.b6) then begin{
+    if (not midi.b6) then begin{
+      midi.b6=True
+    }
+  }end else begin{
+    midi.b6=False
+  }
+  var.handle_qnote=False
+}
+
+
+
+
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
+////// Global Params
+////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
+
+PIE.FrameRate = 120hz;
+if (wiimote.HasMotionPlus = false) then begin{
+   debug = "WiiMotion Plus NOT DETECTED!";
+}
+/////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
