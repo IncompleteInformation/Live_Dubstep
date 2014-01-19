@@ -1,0 +1,14 @@
+General Setup:
+	6 wires that light up in as a function of acceleration along with two instrument dependant ones.
+
+	Drive controls the max lumosity of any lit wires. from 0% to 100%
+
+	I want a mouth that opens with the envelopes.
+
+	put an AND gate on one of the customs for the handlights
+
+Ideas:
+	inst1 is the quietest instrument.
+	inst1 never toggles a custom
+
+	inst2 is a "cryer". it toggles the custom with the eyes

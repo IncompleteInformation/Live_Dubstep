@@ -1,0 +1,108 @@
+﻿/*
+Joe Brown's GameTrak and Two Hand Wiimote Midi controller. Feel free to copy, edit and distribute.
+*/
+//The shift var controls the instrument that you will be using. instrument is wiimote 1, shift2 is wiimote2
+PIE.FrameRate = 300hz;
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+//////        Midi Setup      //////
+midi.DefaultChannel = 1;
+midi.DeviceOut=2;
+//var.pedal_toggled=False;
+//var.toggling=False;
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+////// Right and Left GameTrak Channels
+//var.x1 = joystick.x;
+//var.y1 = joystick.y/2;
+var.z1 = 1-((1+joystick.z)/2);
+var.x2 = joystick.pitch;
+var.y2 = 1+joystick.yaw;
+var.z2 = 1-((1+joystick.roll)/2);
+
+//Toggle Switch
+if (joystick.Button1) then begin {
+   if (!var.toggling) then begin{
+      var.pedal_toggled = !var.pedal_toggled;
+      }
+   var.toggling=True;
+   }end else begin{
+       var.toggling=False;
+   }
+
+
+////////////////////////////////////////////////////////////////////////////////
+//////     Instrument and Modifier
+//////
+//2 = pitch     (z1)
+//3 = volume    (z2)
+//6 = drive     (x2 and y2 [0x + -1y = 0, 1x + 0y = 1])
+//
+/////////////////////////////////////////////////////////////////////////////
+//Calculate Volume and Drive
+/////////////////////////////////////////////////////////////////////////////
+var.drive = sqrt(var.x2**2+var.y2**2)/sqrt(2)
+
+var.rmin0=.12
+var.rmin1=.05
+var.rmax0=.22
+var.rmax1=.16
+
+//var.drive=theta
+if (var.x2<0 and var.y2>0) then begin{
+  var.y2=0
+  var.drive=0
+}
+if (var.drive>1) then begin{
+  var.drive=1
+}
+
+if (var.x2<0) then begin{
+  var.x2=0
+}
+if (var.y2>1) then begin{
+  var.y2=1
+}
+if (var.x2<1 and var.y2==1) then begin{
+  var.x2=1
+}
+
+var.ReffMin = var.rmin0*(1-var.drive)+var.rmin1*(var.drive)
+var.ReffMax = var.rmax0*(1-var.drive)+var.rmax1*(var.drive)
+
+if (var.z2<var.ReffMin) then begin{
+  var.volume=0
+}elseif (var.z2>var.ReffMax) then begin{
+  var.volume=1
+}end else begin{
+  var.volume=(var.z2-var.ReffMin)/(var.ReffMax-var.ReffMin)
+}
+midi.cc3=var.volume
+midi.cc6=var.drive
+
+////////////////////////////////////////////////////////////////////
+//Handle Right Input Stage
+////////////////////////////////////////////////////////////////////
+
+/////////////End Handle WM1A//////////////////////
+  if (var.pedal_toggled) then begin{
+    midi.cc2 = var.z1; //set Pitch to z1 
+  }end else begin{
+    midi.DeviceOut=3;
+    midi.cc1=var.z1;
+    midi.DeviceOut=2;
+    }
+
+////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
+////// Global Params
+////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
+
+
+
+/////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
