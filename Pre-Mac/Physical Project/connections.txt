@@ -1,9 +1,0 @@
-2Right = Ground
-
-2-Left,
-1-Left,
-A-Right,
-Down-Left,
-Left-Top,
-Up-Left,
-Right-Up,

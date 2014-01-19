@@ -1,5 +1,0 @@
-import serial
-import pygame
-import pygame.midi
-
-def main
