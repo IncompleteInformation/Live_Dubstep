@@ -3,11 +3,11 @@ import pygame
 import pygame.midi
 import time
 
+
 class Node:
 	def __init__(self, next, data):
 		self.next = next
 		self.data = data
-
 
 class Ouroboros:
 
@@ -25,6 +25,7 @@ class Ouroboros:
 			total += self.data[i]
 		average = total/(len(self.data))
 		return average
+
 
 class Ableton_Communicator:
 
@@ -56,7 +57,7 @@ class Ableton_Communicator:
 			if message!=[]:
 				if message[0][0][0]==224: #224 = 0xe0
 					pitch = message[0][0][2]
-					if abs(self.pitch_list.avg() - pitch) < 10: # 8% different
+					if ((abs(self.pitch_list.avg() - pitch) < 40) or self.prev_pitch==0): # 8% different
 						self.midi_out.write([[[0xe0,0,pitch],0]])
 						self.prev_pitch = pitch
 						print "accepted", pitch
@@ -67,6 +68,7 @@ class Ableton_Communicator:
 					self.pitch_list.add(pitch)
 				else:
 					self.midi_out.write(message)
+					#print message
 					#print message
 
 		time.sleep(.001)
