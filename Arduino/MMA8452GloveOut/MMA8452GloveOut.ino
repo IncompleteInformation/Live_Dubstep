@@ -49,12 +49,12 @@
 #define pinky_pin   5
 
 // set up a new serial port
-SoftwareSerial mySerial =  SoftwareSerial(rxPin, txPin);
+SoftwareSerial mySerial(rxPin, txPin);
 
-Finger_Trigger index = Finger_Trigger(index_pin);
-Finger_Trigger middle = Finger_Trigger(middle_pin);
-Finger_Trigger ring = Finger_Trigger(ring_pin);
-Finger_Trigger pinky = Finger_Trigger(pinky_pin);
+Finger_Trigger index(index_pin);
+Finger_Trigger middle(middle_pin);
+Finger_Trigger ring(ring_pin);
+Finger_Trigger pinky(pinky_pin);
 
 void setup(){
 
@@ -65,10 +65,12 @@ void setup(){
   pinMode(rxPin, INPUT);
   pinMode(txPin, OUTPUT);
   
+  /*
   pinMode(index_pin,INPUT_PULLUP);
   pinMode(middle_pin,INPUT_PULLUP);
   pinMode(ring_pin,INPUT_PULLUP);
   pinMode(pinky_pin,INPUT_PULLUP);
+  */
   
   mySerial.begin(9600);
   Serial.begin(9600);
@@ -93,7 +95,7 @@ void loop(){
   }
 
   // Send out value
-  mySerial.write(4+128);mySerial.write(accel_to_serial(accelG[0])); //only glove-heil-hitler-axis
+  mySerial.write(accel_to_serial(accelG[0])); //only glove-heil-hitler-axis
   
 //  Serial.println(accel_to_serial(accelG[0]));
 //  delay(10);
