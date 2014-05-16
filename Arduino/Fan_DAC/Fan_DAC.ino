@@ -2,6 +2,14 @@
 
 SoftwareSerial mySerial(13,A7); //RX, (TX not in use, A7 useless to me anyway)
 
+//Globals
+uint8_t RED    = 0;
+uint8_t GREEN  = 0;
+uint8_t BLUE   = 0;
+uint8_t RADIUS = 0;
+
+long prevTime = millis();
+
 void setup()
 {
   DDRB  |=  0b00011111;  //RED, bit 2 = BT TX
@@ -17,14 +25,28 @@ void setup()
 
 void loop()
 {
+  if (mySerial.available()>0){
+    prevTime = millis();
+    byte datum = mySerial.read();
+    byte type  = datum>>6;
+    byte data  = datum & 0b00111111;
 
-  color_sweep(100);
-  color_sweep(50);
-  color_sweep(10);
-  color_sweep(5);
-  for (int i = 0; i<100; i++){
-    color_sweep(1);
+    switch (type) {
+      case 0:
+        RED = data;
+        break;
+      case 1:
+        GREEN = data;
+        break;
+      case 2:
+        BLUE = data;
+        break;
+      case 3:
+        RADIUS = data/3;
+    }
   }
+  if (prevTime - millis() > 10000) color_sweep(1);
+  else RGBwrite(RADIUS,RED,GREEN,BLUE);
 }
 
 void reset_all(){
@@ -65,6 +87,33 @@ void run_blue(int ms){
     out+=(1<<3);
     delay(ms);
   }
+}
+
+void red_lights(uint8_t red, uint8_t radius){
+  if (red>22) red = 22;
+  uint8_t out = red;
+  PORTB &= ~0b00011111;
+  PORTB |= out;
+}
+
+void green_lights(uint8_t green, uint8_t radius){
+  if (green > 22) green = 22;
+  uint8_t out = green;
+  PORTD &= ~0b00011111;
+  PORTD |= out;
+}
+
+void blue_lights(uint8_t blue, uint8_t radius){
+  if (blue > 22) blue = 22;
+  uint8_t out = blue<<3;
+  PORTD &= ~0b11111000;
+  PORTD |= out;
+}
+
+void RGBwrite(uint8_t radius, uint8_t red, uint8_t green, uint8_t blue){
+  red_lights(red, radius);
+  green_lights(green, radius);
+  blue_lights(blue, radius);
 }
 
 void color_sweep(int ms){
