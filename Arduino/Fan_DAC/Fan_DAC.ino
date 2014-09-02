@@ -1,6 +1,6 @@
 #include <SoftwareSerial.h>
 
-SoftwareSerial mySerial(13,A7); //RX, (TX not in use, A7 useless to me anyway)
+SoftwareSerial mySerial(2,A7); //RX, (TX not in use, A7 useless to me anyway)
 
 //Globals
 uint8_t RED    = 0;
@@ -8,7 +8,7 @@ uint8_t GREEN  = 0;
 uint8_t BLUE   = 0;
 uint8_t RADIUS = 0;
 
-long prevTime = millis();
+unsigned long prevTime;
 
 void setup()
 {
@@ -16,10 +16,13 @@ void setup()
   DDRC  |=  0b00011111;  //GRN, 
   DDRD  |=  0b11111000;  //BLU,
   
+  pinMode(2, INPUT);
+  
   PORTB &= ~0b00011111;  //RESET
   PORTC &= ~0b00011111;  //RESET
   PORTD &= ~0b11111000;  //RESET
   
+  prevTime = millis();
   mySerial.begin(9600);
 }
 
@@ -33,20 +36,23 @@ void loop()
 
     switch (type) {
       case 0:
-        RED = data;
+        RED = data/3;
         break;
       case 1:
-        GREEN = data;
+        GREEN = data/3;
         break;
       case 2:
-        BLUE = data;
+        BLUE = data/3;
         break;
       case 3:
-        RADIUS = data/3;
+        RED = GREEN = BLUE = data/3;
+        break;
+      default:
+        break;
     }
   }
-  if (prevTime - millis() > 10000) color_sweep(1);
-  else RGBwrite(RADIUS,RED,GREEN,BLUE);
+  if (millis() - prevTime > 15000) { color_sweep(10); }
+  else { RGBwrite(RADIUS,RED,GREEN,BLUE); }
 }
 
 void reset_all(){
@@ -61,7 +67,7 @@ void reset_blue(){PORTD &= ~0b11111000;}
 
 void run_red(int ms){
   uint8_t out = 0b00000000;
-  while (out < (23<<3)){
+  while (out < 23){
     PORTB &= ~0b00011111;
     PORTB |= out;
     out+=1;
@@ -72,8 +78,8 @@ void run_red(int ms){
 void run_green(int ms){
   uint8_t out = 0b00000000;
   while (out < 23){
-    PORTD &= ~0b00011111;
-    PORTD |= out;
+    PORTC &= ~0b00011111;
+    PORTC |= out;
     out+=1;
     delay(ms);
   }
@@ -81,7 +87,7 @@ void run_green(int ms){
 
 void run_blue(int ms){
   uint8_t out = 0b00000000;
-  while (out < 23){
+  while (out < (23<<3)){
     PORTD &= ~0b11111000;
     PORTD |= out;
     out+=(1<<3);
@@ -99,8 +105,8 @@ void red_lights(uint8_t red, uint8_t radius){
 void green_lights(uint8_t green, uint8_t radius){
   if (green > 22) green = 22;
   uint8_t out = green;
-  PORTD &= ~0b00011111;
-  PORTD |= out;
+  PORTC &= ~0b00011111;
+  PORTC |= out;
 }
 
 void blue_lights(uint8_t blue, uint8_t radius){

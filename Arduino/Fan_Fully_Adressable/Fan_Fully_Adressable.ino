@@ -3,9 +3,9 @@
 SoftwareSerial mySerial(4, A6); // RX, TX Hopefully the unusable A6 will satisfy the parameters. I don't have space for RX
 
 //Init globals
-uint8_t RED = 0;
-uint8_t GREEN = 0;
-uint8_t BLUE = 0;
+uint8_t RED    = 0;
+uint8_t GREEN  = 0;
+uint8_t BLUE   = 0;
 uint8_t RADIUS = 0;
 
 void setup(){
